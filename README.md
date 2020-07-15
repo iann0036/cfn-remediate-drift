@@ -3,8 +3,8 @@
 The following script will programmatically perform the following steps:
 
 * Check for drifted resources
-* Remove any *supported* drifted resources from the stack, whilst retaining the resource
 * Using CloudFormation outputs, extract any references to resources that have drifted and replace the references with the dereferenced values temporarily
+* Remove any *supported* drifted resources from the stack, whilst retaining the resource
 * Import the resources with their current state back into the stack
 * Perform an update on the stack back to its original template, effectively remediating the resources
 
@@ -14,6 +14,12 @@ The following script will programmatically perform the following steps:
 
 ```
 python3 index.py MyStackName
+```
+
+or to specify a region
+
+```
+python3 index.py MyStackName us-east-1
 ```
 
 ### Supported Resources

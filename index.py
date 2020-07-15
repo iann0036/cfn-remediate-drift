@@ -715,7 +715,13 @@ eligible_import_resources = { # from Former2
     }
 }
 
-cfnclient = boto3.client('cloudformation', region_name='us-east-1')
+if len(sys.argv) == 3:
+    cfnclient = boto3.client('cloudformation', region_name=sys.argv[2])
+elif len(sys.argv) == 2:
+    cfnclient = boto3.client('cloudformation')
+else:
+    print("Inconsistent arguments")
+    quit()
 
 try:
     stacks = cfnclient.describe_stacks(
