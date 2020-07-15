@@ -880,8 +880,7 @@ cfnclient.update_stack(
     Capabilities=[
         'CAPABILITY_NAMED_IAM',
         'CAPABILITY_AUTO_EXPAND'
-    ],
-    Parameters=stack_params
+    ]
 )
 
 waiter = cfnclient.get_waiter('stack_update_complete')
@@ -934,8 +933,7 @@ new_stack_id = cfnclient.create_change_set(
         'CAPABILITY_NAMED_IAM',
         'CAPABILITY_AUTO_EXPAND'
     ],
-    ResourcesToImport=import_resources,
-    Parameters=stack_params
+    ResourcesToImport=import_resources
 )['StackId']
 
 waiter = cfnclient.get_waiter('change_set_create_complete')

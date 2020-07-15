@@ -3,7 +3,6 @@ Description: Contains IAM Role and policies to support drift remediation demo
 Parameters:
   RoleName:
     Type: String
-    Default: somerandomrole
 Resources:
   AutomaticDriftRemediationRole:
     Type: AWS::IAM::Role
