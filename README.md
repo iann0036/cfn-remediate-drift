@@ -1,4 +1,4 @@
-# CloudFormation Remediate Drift [WORK IN PROGRESS]
+# CloudFormation Remediate Drift
 
 The following script will programmatically perform the following steps:
 
