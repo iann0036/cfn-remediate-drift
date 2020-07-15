@@ -5,6 +5,41 @@ import time
 from collections import OrderedDict
 from cfn_flip import flip, to_yaml, to_json
 
+resolve_matches = {}
+
+def resolvePropertyValue(prop, match_resources, replace_values):
+    if isinstance(prop, dict):
+        if 'Ref' in prop:
+            if prop['Ref'] in match_resources:
+                if replace_values:
+                    return resolve_matches['Ref' + prop['Ref']]
+                else:
+                    resolve_matches['Ref' + prop['Ref']] = {
+                        'Ref': prop['Ref']
+                    }
+        elif 'Fn::GetAtt' in prop:
+            if prop['Fn::GetAtt'][0] in match_resources:
+                if replace_values:
+                    return resolve_matches['GetAtt' + prop['Fn::GetAtt'][0] + prop['Fn::GetAtt'][1]]
+                else:
+                    resolve_matches['GetAtt' + prop['Fn::GetAtt'][0] + prop['Fn::GetAtt'][1]] = {
+                        'Fn::GetAtt': prop['Fn::GetAtt']
+                    }
+        elif 'Fn::Sub' in prop:
+            pass # TODO
+        
+        ret = {}
+        for k, v in prop.items():
+            ret[k] = resolvePropertyValue(v, match_resources, replace_values)
+        return ret
+    elif isinstance(prop, list) and not isinstance(prop, str):
+        ret = []
+        for listitem in prop:
+            ret.append(resolvePropertyValue(listitem, match_resources, replace_values))
+        return ret
+    else:
+        return prop
+
 empty_template = {
     "Conditions": {
         "FalseCondition": {
@@ -699,7 +734,6 @@ original_template = cfnclient.get_template(
 )['TemplateBody']
 
 if not isinstance(original_template, str):
-    print("Converting ORDEREDDICT")
     original_template = json.dumps(dict(original_template)) # OrderedDict
 
 print("Found stack, detecting drift...")
@@ -755,8 +789,6 @@ template = json.loads(to_json(original_template))
 for k, v in template['Resources'].items():
     template['Resources'][k]['DeletionPolicy'] = 'Retain'
 
-# TODO: Reference extraction via Outputs
-
 print("Drift detected, setting resource retention...")
 
 cfnclient.update_stack(
@@ -776,6 +808,52 @@ waiter.wait(
         'MaxAttempts': 360
     }
 )
+
+# De-ref
+match_resources = []
+for drifted_resource in resource_drifts:
+    match_resources.append(drifted_resource['LogicalResourceId'])
+resolvePropertyValue(template, match_resources, False)
+
+if len(resolve_matches) > 0:
+    print("Temporarily dereferencing removed resources...")
+
+    if not 'Outputs' in template:
+        template['Outputs'] = {}
+
+    for k, v in resolve_matches.items():
+        template['Outputs']['Drift' + str(k)] = {
+            'Value': v
+        }
+
+    cfnclient.update_stack(
+        StackName=original_stack_id,
+        TemplateBody=json.dumps(template),
+        Capabilities=[
+            'CAPABILITY_NAMED_IAM',
+            'CAPABILITY_AUTO_EXPAND'
+        ]
+    )
+
+    waiter = cfnclient.get_waiter('stack_update_complete')
+    waiter.wait(
+        StackName=original_stack_id,
+        WaiterConfig={
+            'Delay': 10,
+            'MaxAttempts': 360
+        }
+    )
+
+    stack_outputs = cfnclient.describe_stacks(
+        StackName=original_stack_id
+    )['Stacks'][0]['Outputs']
+
+    for k, v in resolve_matches.items():
+        for output in stack_outputs:
+            if output['OutputKey'] == 'Drift' + str(k):
+                resolve_matches[k] = output['OutputValue']
+
+    template = resolvePropertyValue(template, match_resources, True)
 
 print("Removing drifted resources (whilst retaining resources!)...")
 
