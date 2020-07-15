@@ -2,17 +2,22 @@ import boto3
 import sys
 import json
 import time
+from collections import OrderedDict
 from cfn_flip import flip, to_yaml, to_json
 
-empty_template = '''
-Conditions:
-    FalseCondition: !Equals [1, 2]
-
-Resources:
-    PlaceholderResource:
-        Condition: FalseCondition
-        Type: AWS::S3::Bucket
-'''
+empty_template = {
+    "Conditions": {
+        "FalseCondition": {
+            "Fn::Equals": [1, 2]
+        }
+    },
+    "Resources": {
+        "PlaceholderResource": {
+            "Condition": "FalseCondition",
+            "Type": "AWS::S3::Bucket"
+        }
+    }
+}
 
 eligible_import_resources = { # from Former2
     "AWS::ACMPCA::Certificate": {
@@ -693,6 +698,10 @@ original_template = cfnclient.get_template(
     TemplateStage='Processed'
 )['TemplateBody']
 
+if not isinstance(original_template, str):
+    print("Converting ORDEREDDICT")
+    original_template = json.dumps(dict(original_template)) # OrderedDict
+
 print("Found stack, detecting drift...")
 
 stack_drift_detection_id = cfnclient.detect_stack_drift(
@@ -737,14 +746,16 @@ while 'NextToken' in resource_drifts_result:
     )
     resource_drifts += resource_drifts_result['StackResourceDrifts']
 
-for k, v in resource_drifts: # filter non-importable resources
-    if v['ResourceType'] not in eligible_import_resources.keys():
-        del resource_drifts[k]
+for i in range(len(resource_drifts)): # filter non-importable resources
+    if resource_drifts[i]['ResourceType'] not in eligible_import_resources.keys():
+        del resource_drifts[i]
 
 template = json.loads(to_json(original_template))
 
 for k, v in template['Resources'].items():
     template['Resources'][k]['DeletionPolicy'] = 'Retain'
+
+# TODO: Reference extraction via Outputs
 
 print("Drift detected, setting resource retention...")
 
@@ -772,7 +783,7 @@ for drifted_resource in resource_drifts:
     del template['Resources'][drifted_resource['LogicalResourceId']]
 
 if len(template['Resources']) == 0: # last ditch effort to retain stack
-    template = json.loads(empty_template)
+    template = empty_template
 
 cfnclient.update_stack(
     StackName=original_stack_id,

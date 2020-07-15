@@ -1,10 +1,15 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: Contains IAM Role and policies to support drift remediation demo
 Resources:
+  ReliantBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref AutomaticDriftRemediationRole
+
   AutomaticDriftRemediationRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: 'AutomaticDriftRemediationRole'
+      RoleName: 'automaticdriftremediationroleianm'
       Path: /
       AssumeRolePolicyDocument:
         Version: 2012-10-17
