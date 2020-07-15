@@ -1,18 +1,14 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: Contains IAM Role and policies to support drift remediation demo
+Parameters:
+  RoleName:
+    Type: String
+    Default: somerandomrole
 Resources:
-  SomeParam:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: tmp
-      Type: String
-      Value: !GetAtt AutomaticDriftRemediationRole.RoleId
-      Description: !Ref AutomaticDriftRemediationRole
-
   AutomaticDriftRemediationRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: 'automaticdriftremediationroleianm'
+      RoleName: !Ref RoleName
       Path: /
       AssumeRolePolicyDocument:
         Version: 2012-10-17
