@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Contains IAM Role and policies to support drift remediation demo
+Resources:
+  AutomaticDriftRemediationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: 'AutomaticDriftRemediationRole'
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess
+      - arn:aws:iam::aws:policy/AmazonDynamoDBReadOnlyAccess
+      Policies:
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - s3:Get*
+            - s3:List*
+            Effect: Allow
+            Resource: '*'
+          - Action:
+            - glacier:DescribeJob
+            - glacier:DescribeVault
+            - glacier:GetDataRetrievalPolicy
+            - glacier:GetJobOutput
+            - glacier:GetVaultAccessPolicy
+            - glacier:GetVaultLock
+            - glacier:GetVaultNotifications
+            - glacier:ListJobs
+            - glacier:ListMultipartUploads
+            - glacier:ListParts
+            - glacier:ListTagsForVault
+            - glacier:ListVaults
+            Effect: Allow
+            Resource: '*'
+        PolicyName: 'AutomaticDriftRemediationPolicyOne'
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - ecs:ListClusters
+            - ecs:DescribeContainerInstances
+            Effect: Allow
+            Resource:
+            - arn:aws:ecs:us-east-1:767145733124:service/exampleClusterOne*
+            - arn:aws:ecs:us-east-1:767145733124:service/exampleClusterTwo*
+        PolicyName: 'AutomaticDriftRemediationPolicyTwo'
