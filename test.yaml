@@ -52,6 +52,6 @@ Resources:
             - ecs:DescribeContainerInstances
             Effect: Allow
             Resource:
-            - arn:aws:ecs:us-east-1:767145733124:service/exampleClusterOne*
-            - arn:aws:ecs:us-east-1:767145733124:service/exampleClusterTwo*
+            - arn:aws:ecs:us-east-1:123456789012:service/exampleClusterOne*
+            - arn:aws:ecs:us-east-1:123456789012:service/exampleClusterTwo*
         PolicyName: 'AutomaticDriftRemediationPolicyTwo'
