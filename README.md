@@ -1,5 +1,7 @@
 # CloudFormation Remediate Drift
 
+**Update 2022: Check out https://github.com/WeAreCloudar/cfn-drift-remediation for a new, better way to achieve this**
+
 The following script will programmatically perform the following steps:
 
 * Check for drifted resources
